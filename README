@@ -1,0 +1,8 @@
+A Project to track Cloud Block storage performance tests
+
+cmake .
+make 
+
+./read-throughput /path/to/volume
+
+
