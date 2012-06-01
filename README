@@ -4,6 +4,11 @@ apt-get install libboost-all-dev
 cmake .
 make 
 
-./read-throughput /path/to/volume
+# Single Threaded Reads
+./read /path/to/volume
+
+# Multi Threaded Reads 
+./read-threaded -d /path/to/volume -j num_jobs -b block_size
+
 
 
