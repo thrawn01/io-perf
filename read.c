@@ -10,10 +10,6 @@
 
 #include "gethrxtime.h"
 
-void usage(int status){
-    exit(status);
-}
-
 int main(int argc, char **argv){
     double XTIME_PRECISIONe0 = XTIME_PRECISION;
     char const *bytes_per_second;

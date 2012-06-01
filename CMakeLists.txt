@@ -7,5 +7,5 @@ INCLUDE_DIRECTORIES(.)
 ADD_EXECUTABLE(read read.c gethrxtime.c gettime.c)
 TARGET_LINK_LIBRARIES(read rt) 
 
-ADD_EXECUTABLE(read-threaded read-threaded.cpp)
-TARGET_LINK_LIBRARIES(read-threaded boost_thread) 
+ADD_EXECUTABLE(read-threaded read-threaded.cpp gethrxtime.c gettime.c)
+TARGET_LINK_LIBRARIES(read-threaded boost_thread rt)
