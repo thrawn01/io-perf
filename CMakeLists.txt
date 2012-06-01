@@ -1,6 +1,11 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT(perf-tests)
+PROJECT(io-perf)
 
-#ADD_EXECUTABLE(read-throughput read-throughput.c gethrxtime.c human.c argmatch.c)
-ADD_EXECUTABLE(read-throughput read-throughput.c gethrxtime.c gettime.c)
-TARGET_LINK_LIBRARIES(read-throughput rt ) 
+# Include the local directory
+INCLUDE_DIRECTORIES(.)
+
+ADD_EXECUTABLE(read read.c gethrxtime.c gettime.c)
+TARGET_LINK_LIBRARIES(read rt) 
+
+ADD_EXECUTABLE(read-threaded read-threaded.cpp)
+TARGET_LINK_LIBRARIES(read-threaded boost_thread) 

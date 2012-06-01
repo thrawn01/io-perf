@@ -1,5 +1,6 @@
 A Project to track Cloud Block storage performance tests
 
+apt-get install libboost-all-dev
 cmake .
 make 
 
