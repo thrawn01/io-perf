@@ -52,27 +52,31 @@ void read_block(const char* file, ssize_t offset, int num_blocks){
         return;
     }
 
-    char *local_buf;
+    char *local_buf = 0;
+    char* compress_buf = 0;
+    if(compress){
+        // lz4 may need more space to compress, ask
+        // it for the worst possible resulting buffer size
+        compress_buf = (char*)malloc(LZ4_compressBound(block_size));
+    }
+
     if(posix_memalign((void**)&local_buf, 512, block_size) != 0){
         printf("Error Allocating memory\n");
     }
 
-    for ( int i=0; i < num_blocks; ++i){
+    for(int i=0; i < num_blocks; ++i){
         int count = read(fd, local_buf, block_size);
         if (count < 0 || errno == EINTR){
             printf("T - Read Error: '%s'\n", strerror(errno));
             return;
         }
+        if(compress){
+            // Preform the compression
+            ssize_t compress_size = compress(local_buf, compress_buf, block_size);
+            printf("Compressed block %d from %lu to: %lu Bytes\n", i, block_size, compress_size);
+        }
     }
-
-    if (compress){
-        // lz4 may need more space to compress, ask it for the 
-        // worst possible resulting buffer size
-        char* compress_buf = (char*)malloc(LZ4_compressBound(block_size));
-        // Preform the compression
-        ssize_t compress_size = compress(local_buf, compress_buf, block_size);
-        printf("Compressed from %lu to: %lu Bytes\n", block_size, compress_size);
-    }
+    free(compress_buf);
     free(local_buf);
 }
 
