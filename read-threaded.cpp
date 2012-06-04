@@ -12,13 +12,17 @@
 #include <stdlib.h>
 
 extern "C" {
-  #include "gethrxtime.h"
+    #include "gethrxtime.h"
+    #include "lz4/lz4.h"
+    #include "lz4/lz4hc.h"
 }
 
 using namespace boost::threadpool;
+int (*compress)(const char*, char*, int) = 0;
 
-// 1 gig block size
-ssize_t block_size = 1073741824;
+
+// 10MB Block size seams optimal on our hardware
+ssize_t block_size = 10485760;
 
 ssize_t size(const char* file){
 
@@ -48,8 +52,8 @@ void read_block(const char* file, ssize_t offset, int num_blocks){
         return;
     }
 
-    void *local_buf;
-    if(posix_memalign(&local_buf, 512, block_size) != 0){
+    char *local_buf;
+    if(posix_memalign((void**)&local_buf, 512, block_size) != 0){
         printf("Error Allocating memory\n");
     }
 
@@ -61,12 +65,20 @@ void read_block(const char* file, ssize_t offset, int num_blocks){
         }
     }
 
+    if (compress){
+        // lz4 may need more space to compress, ask it for the 
+        // worst possible resulting buffer size
+        char* compress_buf = (char*)malloc(LZ4_compressBound(block_size));
+        // Preform the compression
+        ssize_t compress_size = compress(local_buf, compress_buf, block_size);
+        printf("Compressed from %lu to: %lu Bytes\n", block_size, compress_size);
+    }
     free(local_buf);
 }
 
 
 void usage(void) {
-    printf("read-threaded -d <device> [ -b <block_size> -j <num_of_jobs> ]\n");
+    printf("read-threaded -d <device> [ -b <block_size> -j <num_of_jobs> -c <compression level> ]\n");
     exit(1);
 }
 
@@ -77,7 +89,7 @@ int main(int argc, char **argv){
     char *device = 0;
     int c;
 
-    while ((c = getopt (argc, argv, "d:b:j:")) != -1) {
+    while ((c = getopt (argc, argv, "d:b:j:c:")) != -1) {
         switch (c) {
             case 'd':
                 device = optarg; 
@@ -87,6 +99,15 @@ int main(int argc, char **argv){
             break;
             case 'j':
                 num_jobs = atoi(optarg);
+            break;
+            case 'c':
+                // Compression Level
+                switch (atoi(optarg)) {
+                    case 0 : compress = 0; break;
+                    case 1 : compress = LZ4_compress; break;
+                    case 2 : compress = LZ4_compressHC; break;
+                    default: break;
+                }
             break;
             default:
                 printf("Unknown option character `\\x%x'.\n", optopt);
