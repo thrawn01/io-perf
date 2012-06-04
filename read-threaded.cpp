@@ -17,7 +17,6 @@ extern "C" {
 
 using namespace boost::threadpool;
 
-void *shared_buf;
 // 1 gig block size
 ssize_t block_size = 1073741824;
 
@@ -49,13 +48,20 @@ void read_block(const char* file, ssize_t offset, int num_blocks){
         return;
     }
 
+    void *local_buf;
+    if(posix_memalign(&local_buf, 512, block_size) != 0){
+        printf("Error Allocating memory\n");
+    }
+
     for ( int i=0; i < num_blocks; ++i){
-        int count = read(fd, shared_buf, block_size);
+        int count = read(fd, local_buf, block_size);
         if (count < 0 || errno == EINTR){
             printf("T - Read Error: '%s'\n", strerror(errno));
             return;
         }
     }
+
+    free(local_buf);
 }
 
 
@@ -95,12 +101,6 @@ int main(int argc, char **argv){
 
     ssize_t file_size = size(device);
 
-    // Shared Buffer 1G buffer (We don't really care about the 
-    // data, we allow the threads to clobber each other)
-    if(posix_memalign(&shared_buf, 512, block_size) != 0){
-        printf("Error Allocating memory\n");
-    }
-   
     // figure the total number of blocks on the device
     int total_blocks = (int)(file_size / block_size);
     // figure how many blocks a threads should read before quiting
